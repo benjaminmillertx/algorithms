@@ -30,7 +30,7 @@ def smart_search(query, documents):
 documents = ["Python programming", "Machine learning basics", "Natural language processing"]
 query = "learn NLP"
 print(smart_search(query, documents))
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Java
 Java
 
@@ -53,8 +53,7 @@ public class SmartSearch {
         }
         return results;
     }
-}
-AI-generated code. Review and use carefully. More info on FAQ.
+}.
 JavaScript
 JavaScript
 
@@ -65,7 +64,7 @@ function smartSearch(query, documents) {
 const documents = ["Python programming", "Machine learning basics", "Natural language processing"];
 const query = "learn NLP";
 console.log(smartSearch(query, documents));
-AI-generated code. Review and use carefully. More info on FAQ.
+
 C++
 #include <iostream>
 #include <vector>
@@ -105,7 +104,7 @@ smart_search <- function(query, documents) {
 documents <- c("Python programming", "Machine learning basics", "Natural language processing")
 query <- "learn NLP"
 print(smart_search(query, documents))
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Industry Applications
 E-commerce: Improve product search accuracy and relevance.
 Media: Enhance content discovery and user engagement.
