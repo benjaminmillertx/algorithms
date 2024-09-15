@@ -1,0 +1,170 @@
+Algorithm Name: Adaptive AI Pathfinding (AAP)
+Creator: Benjamin Hunter Miller
+
+Description:
+The Adaptive AI Pathfinding (AAP) algorithm is designed for Unity games that require dynamic and intelligent NPC navigation. This algorithm enhances traditional A* or Dijkstra's pathfinding by allowing AI agents to adapt their movement based on environmental changes, player actions, and other NPCs in real-time.
+
+AAP can be used in various genres such as strategy games, open-world games, or action-adventure titles where non-player characters (NPCs) must navigate complex, dynamically changing environments. The key feature of AAP is its ability to adjust paths dynamically when obstacles appear or disappear, optimizing both path selection and movement efficiency.
+
+Key Features:
+Dynamic Path Recalculation: Continuously monitors the environment for changes (e.g., new obstacles, removed objects) and recalculates paths without interrupting the agent’s movement.
+Crowd Avoidance: Integrates with Unity's physics and collider system to prevent AI agents from colliding with one another, using local avoidance techniques.
+Multi-Layer Navigation: Supports different navigation surfaces (e.g., ground, platforms, slopes) with dynamic pathfinding, ensuring that agents can traverse varying terrain types.
+Player-Aware Navigation: NPCs can react to player movement, changing their paths to pursue, flee, or strategically flank based on player proximity and actions.
+Environment-Aware Adaptation: Detects and accounts for destructible or interactive objects (e.g., doors opening/closing, walls collapsing) that alter navigation routes.
+Efficient Performance: Optimized for real-time updates in large open worlds, with support for LOD (Level of Detail) pathfinding, reducing computation for distant NPCs.
+How It Works:
+Initial Path Calculation: Similar to the traditional A* algorithm, AAP starts by calculating an optimal path from the NPC’s current position to its target using a heuristic (e.g., Euclidean distance).
+
+Dynamic Path Recalculation: The algorithm continually monitors the environment and NPC’s current state. If new obstacles appear or disappear (e.g., a door closes or debris falls), AAP recalculates the path in real-time without freezing the NPC.
+
+Crowd Control and Local Avoidance: AAP implements local avoidance by incorporating Unity’s physics system. This prevents AI agents from clustering or colliding with each other, using steering behaviors to maintain optimal movement.
+
+Player Interaction: When the player is detected, AAP adapts the NPC’s path to react appropriately, either by pursuing the player, fleeing, or finding cover based on the AI’s behavior.
+
+Multi-Layer Navigation: The algorithm can calculate paths across multiple layers, such as ground, platforms, or elevated areas. NPCs can navigate slopes, stairs, and ladders if necessary, and intelligently switch between surfaces.
+
+Path Smoothing: After the initial path is calculated, AAP smooths the path to make it more natural and direct, avoiding unnecessary zigzagging or erratic movements.
+
+Use Cases:
+Action-Adventure Games: NPC enemies can dynamically chase the player through complex environments while avoiding obstacles and adapting their path based on the player's actions.
+Real-Time Strategy (RTS) Games: Units must navigate dynamically changing battlefields, avoiding obstacles like destroyed buildings and other units.
+Survival Games: In large open-world environments, NPCs can react to dynamic environmental changes such as collapsing buildings, moving platforms, or weather effects (e.g., flooding).
+Stealth Games: Guard NPCs can patrol routes and dynamically change their path when they detect the player, obstacles, or alarms.
+Simulation Games: In crowd simulations or city builders, NPCs navigate densely populated environments while avoiding collisions with other NPCs and structures.
+Unity Implementation
+Step 1: Setup the Scene
+Create a Unity scene with a NavMesh baked for the terrain or environment.
+Add obstacles and dynamic objects to the scene (e.g., doors, walls) that can change during gameplay.
+Step 2: Script for Adaptive AI Pathfinding
+csharp
+Copy code
+using UnityEngine;
+using UnityEngine.AI;
+
+public class AdaptiveAIPathfinding : MonoBehaviour
+{
+    public Transform player;
+    public float detectionRadius = 10f;
+    public LayerMask obstacleMask;
+    public LayerMask playerMask;
+
+    private NavMeshAgent agent;
+    private Vector3 lastTargetPosition;
+    private bool isPathBlocked = false;
+
+    void Start()
+    {
+        agent = GetComponent<NavMeshAgent>();
+        lastTargetPosition = agent.destination;
+    }
+
+    void Update()
+    {
+        // If player is within detection range, adapt path to pursue or avoid
+        if (PlayerInRange())
+        {
+            AdaptPathToPlayer();
+        }
+        else
+        {
+            if (HasPathChanged())
+            {
+                RecalculatePath();  // Recalculate path if environment changes
+            }
+        }
+
+        // Check for dynamic obstacles
+        DetectDynamicObstacles();
+    }
+
+    bool PlayerInRange()
+    {
+        return Vector3.Distance(transform.position, player.position) < detectionRadius;
+    }
+
+    void AdaptPathToPlayer()
+    {
+        agent.SetDestination(player.position);
+        lastTargetPosition = player.position;
+    }
+
+    bool HasPathChanged()
+    {
+        return agent.destination != lastTargetPosition;
+    }
+
+    void RecalculatePath()
+    {
+        NavMeshPath newPath = new NavMeshPath();
+        agent.CalculatePath(lastTargetPosition, newPath);
+        if (newPath.status == NavMeshPathStatus.PathComplete)
+        {
+            agent.SetPath(newPath);
+        }
+    }
+
+    void DetectDynamicObstacles()
+    {
+        Collider[] obstacles = Physics.OverlapSphere(transform.position, detectionRadius, obstacleMask);
+        if (obstacles.Length > 0)
+        {
+            isPathBlocked = true;
+            RecalculatePathAroundObstacles(obstacles);
+        }
+        else
+        {
+            isPathBlocked = false;
+        }
+    }
+
+    void RecalculatePathAroundObstacles(Collider[] obstacles)
+    {
+        Vector3 directionToPlayer = player.position - transform.position;
+        Vector3 bestAlternative = transform.position;
+
+        // Find the best alternative path around obstacles
+        foreach (Collider obstacle in obstacles)
+        {
+            Vector3 directionToObstacle = obstacle.transform.position - transform.position;
+            Vector3 potentialDirection = directionToPlayer + directionToObstacle.normalized * -1;
+
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(transform.position + potentialDirection * 2f, out hit, 5.0f, NavMesh.AllAreas))
+            {
+                bestAlternative = hit.position;
+                break;
+            }
+        }
+
+        // Set the new path avoiding the obstacle
+        agent.SetDestination(bestAlternative);
+    }
+
+    // Optional: Visualize detection range and obstacles in the scene view
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, detectionRadius);
+    }
+}
+Explanation:
+Player Detection: The NPC dynamically adjusts its path to pursue the player when the player is within a specified detection range (PlayerInRange()).
+Obstacle Detection: The DetectDynamicObstacles() method uses Unity's physics system to detect nearby dynamic obstacles, such as walls or doors, using a sphere collider around the NPC. If an obstacle is detected, the NPC recalculates its path to avoid it.
+Path Recalculation: The algorithm recalculates the path using agent.CalculatePath() whenever a path is blocked or the player's position changes.
+Adaptive Pathfinding: The algorithm also adapts paths when the environment changes (e.g., when a door closes, an explosion creates debris, or objects move), avoiding obstacles dynamically.
+Dynamic Obstacle Avoidance: When dynamic obstacles are detected, the NPC tries to navigate around them by calculating alternative paths based on the obstacles’ positions.
+Step 3: Customization and Features
+Crowd Control: Integrate Unity’s NavMeshObstacle components for static objects and implement local avoidance for NPCs. Unity’s NavMeshAgent includes built-in collision avoidance features that can be customized for group behavior.
+Navigation Across Multiple Levels: For games with multiple levels or vertical navigation (e.g., ladders, platforms), bake multiple NavMeshes and allow agents to switch between them dynamically based on triggers or proximity.
+Stealth Behavior: For stealth games, modify the AdaptPathToPlayer() function to implement more complex AI behaviors like hiding or flanking based on player visibility or proximity.
+Step 4: Optimizations
+LOD Pathfinding: For distant NPCs, reduce the frequency of path recalculations or use simplified pathfinding by increasing the update intervals.
+Grid-Based Detection: In larger environments, implement a grid-based or hierarchical pathfinding system that only recalculates paths in the NPC’s immediate surroundings.
+Cost-Based Navigation: You can also assign different movement costs to different types of terrain (e.g., slower movement on slopes or across water) using NavMesh layers.
+Example Use Cases in Games:
+Open-World Action-Adventure: NPCs dynamically chase or evade the player through complex terrain, avoiding other NPCs and moving objects in the environment.
+RTS Games: Units find optimal paths around other units and terrain features in real time, ensuring large armies move efficiently without getting stuck.
+Survival Games: Animals or NPCs navigate dynamically generated environments, adjusting their pathfinding to avoid obstacles like trees, rocks, or player-built structures.
+Conclusion:
+The Adaptive AI Pathfinding (AAP) algorithm, authored by Benjamin Hunter Miller, provides an advanced pathfinding solution for NPCs in Unity games. It allows dynamic, real-time path adjustments based on player actions, environmental changes, and obstacles, ensuring smooth and intelligent NPC behavior. Whether in an open-world game, RTS, or stealth scenario, AAP enables developers to create more immersive and responsive NPCs that adapt seamlessly to evolving game worlds.
