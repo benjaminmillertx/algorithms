@@ -1,0 +1,116 @@
+Algorithm By Benjamin Miller Overview
+Image Size Optimization: Resize images to fit within specified dimensions while maintaining aspect ratio.
+Responsive Design: Use media queries to adjust image sizes based on screen width.
+JavaScript (Node.js)
+JavaScript
+
+const sharp = require('sharp');
+
+function optimizeImage(inputPath, outputPath, width, height) {
+    sharp(inputPath)
+        .resize(width, height, { fit: 'inside' })
+        .toFile(outputPath, (err, info) => {
+            if (err) throw err;
+            console.log('Image optimized:', info);
+        });
+}
+
+// Example usage
+optimizeImage('input.jpg', 'output.jpg', 800, 600);
+AI-generated code. Review and use carefully. More info on FAQ.
+Python
+Python
+
+from PIL import Image
+
+def optimize_image(input_path, output_path, width, height):
+    with Image.open(input_path) as img:
+        img.thumbnail((width, height))
+        img.save(output_path, "JPEG")
+
+# Example usage
+optimize_image('input.jpg', 'output.jpg', 800, 600)
+AI-generated code. Review and use carefully. More info on FAQ.
+PHP
+PHP
+
+function optimizeImage($inputPath, $outputPath, $width, $height) {
+    $image = imagecreatefromjpeg($inputPath);
+    $newImage = imagescale($image, $width, $height);
+    imagejpeg($newImage, $outputPath);
+    imagedestroy($image);
+    imagedestroy($newImage);
+}
+
+// Example usage
+optimizeImage('input.jpg', 'output.jpg', 800, 600);
+AI-generated code. Review and use carefully. More info on FAQ.
+Ruby
+Ruby
+
+require 'mini_magick'
+
+def optimize_image(input_path, output_path, width, height)
+    image = MiniMagick::Image.open(input_path)
+    image.resize "#{width}x#{height}"
+    image.write output_path
+end
+
+# Example usage
+optimize_image('input.jpg', 'output.jpg', 800, 600)
+AI-generated code. Review and use carefully. More info on FAQ.
+Java
+Java
+
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
+
+public class ImageOptimizer {
+    public static void optimizeImage(String inputPath, String outputPath, int width, int height) throws Exception {
+        BufferedImage originalImage = ImageIO.read(new File(inputPath));
+        Image resizedImage = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        BufferedImage outputImage = new BufferedImage(width, height, originalImage.getType());
+
+        Graphics2D g2d = outputImage.createGraphics();
+        g2d.drawImage(resizedImage, 0, 0, null);
+        g2d.dispose();
+
+        ImageIO.write(outputImage, "jpg", new File(outputPath));
+    }
+
+    // Example usage
+    public static void main(String[] args) throws Exception {
+        optimizeImage("input.jpg", "output.jpg", 800, 600);
+    }
+}
+AI-generated code. Review and use carefully. More info on FAQ.
+Responsive Design with CSS
+CSS
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+@media (max-width: 600px) {
+    img {
+        width: 100%;
+    }
+}
+
+@media (min-width: 601px) and (max-width: 1200px) {
+    img {
+        width: 50%;
+    }
+}
+
+@media (min-width: 1201px) {
+    img {
+        width: 25%;
+    }
+}
+AI-generated code. Review and use carefully. More info on FAQ.
+This implementation ensures that images are resized to fit within specified dimensions while maintaining their aspect ratio, and the CSS ensures that images are responsive to different screen sizes. Feel free to adapt and expand this code to suit your specific needs
