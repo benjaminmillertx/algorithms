@@ -28,7 +28,7 @@ def detect_anomalies(data, threshold=3):
 
 data = [10, 12, 12, 13, 12, 11, 10, 100, 12, 11]
 print(detect_anomalies(data))
-AI-generated code. Review and use carefully. More info on FAQ.
+
 2. C++
 Algorithm: Anomaly Detection using Z-Score
 
@@ -93,7 +93,7 @@ function detectAnomalies(data, threshold = 3) {
 
 const data = [10, 12, 12, 13, 12, 11, 10, 100, 12, 11];
 console.log(detectAnomalies(data));
-AI-generated code. Review and use carefully. More info on FAQ.
+
 4. Java
 Algorithm: Anomaly Detection using Z-Score
 
@@ -133,7 +133,7 @@ public class AnomalyDetection {
         }
     }
 }
-AI-generated code. Review and use carefully. More info on FAQ.
+
 5. Rust
 Algorithm: Anomaly Detection using Z-Score
 
