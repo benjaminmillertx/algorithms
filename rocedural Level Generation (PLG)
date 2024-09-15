@@ -1,0 +1,160 @@
+Algorithm Name: Procedural Level Generation (PLG)
+Creator: Benjamin Hunter Miller
+
+Description:
+The Procedural Level Generation (PLG) algorithm is designed to dynamically create game levels in Unity at runtime. It generates random or semi-random levels based on a set of rules and parameters, ensuring variety and replayability for games like roguelikes, dungeon crawlers, platformers, or even open-world exploration games.
+
+PLG works by assembling level elements such as rooms, corridors, obstacles, and enemies using procedural techniques, guaranteeing that each playthrough feels unique. It also allows for balancing randomness with designer control, where certain rules guide the placement of key objectives (like boss rooms or treasures) to maintain a coherent flow and challenge.
+
+Key Features:
+Room-Based or Tile-Based Generation: The algorithm can generate rooms or levels by placing prefabs or tiles in a grid, connecting them via corridors or paths.
+Randomized and Rule-Based Layouts: Combines randomization with predefined rules (such as room size, connection types, and key locations) to ensure fun and playable layouts.
+Adjustable Parameters: The player or designer can tweak parameters such as room density, size, difficulty, and the number of enemies or obstacles.
+Themed Levels: Allows for different level "themes" (e.g., lava, forest, sci-fi) by dynamically changing materials, lighting, and level assets.
+Performance Optimized: Efficiently generates levels using chunk-based loading and only places objects within the player's immediate vicinity to reduce memory usage and improve performance.
+Replayability: Each playthrough generates a different layout, ensuring that levels never feel repetitive.
+How It Works:
+Grid Setup: The level is divided into a 2D or 3D grid, where each cell represents a potential room or tile. The algorithm starts by placing an entry point for the player and then expands the level by adding rooms or paths according to predefined rules.
+
+Room Placement: The algorithm places rooms randomly, ensuring that they connect via doors or corridors. It uses room templates (prefabs) and randomizes their orientation, size, and contents (such as obstacles, enemies, and loot).
+
+Corridor Connection: Rooms are connected using corridors, ensuring there is always a path from the entry point to the exit. The algorithm prevents corridors from overlapping or crossing paths to maintain navigable layouts.
+
+Key Locations: The algorithm reserves certain parts of the grid for key elements like boss rooms, treasure rooms, or puzzles, making sure they are spaced adequately from the entry point to maintain challenge progression.
+
+Object and Enemy Placement: Once the layout is complete, the algorithm populates rooms and corridors with enemies, objects, and environmental details (like traps or power-ups) based on predefined difficulty or theme parameters.
+
+Theme Application: Depending on the level’s theme (e.g., dungeon, sci-fi, jungle), the algorithm assigns different materials, lighting, and sound effects to match the chosen aesthetic.
+
+Use Cases:
+Roguelikes and Dungeon Crawlers: Games like Hades or The Binding of Isaac where each level is generated anew for each playthrough, ensuring endless replayability.
+Platformers: Games like Spelunky or Dead Cells that feature procedurally generated platforms, traps, and rooms.
+Exploration Games: Open-world games where different biomes, caves, or dungeons are procedurally generated to offer unique areas for players to explore.
+RTS or Tower Defense: Dynamic maps can be generated for each game, creating new layouts for players to build and defend.
+Unity Implementation
+Step 1: Setup Prefabs and Grid
+Create prefabs for rooms, corridors, obstacles, enemies, and power-ups in Unity. These prefabs will be used as building blocks for the procedural generation.
+Use a 2D or 3D grid system to represent the overall structure of the level.
+Step 2: Script for Procedural Level Generation
+csharp
+Copy code
+using UnityEngine;
+using System.Collections.Generic;
+
+public class ProceduralLevelGeneration : MonoBehaviour
+{
+    public GameObject roomPrefab;            // The prefab used for rooms
+    public GameObject corridorPrefab;        // The prefab used for corridors
+    public int gridWidth = 10;               // Width of the grid (number of rooms horizontally)
+    public int gridHeight = 10;              // Height of the grid (number of rooms vertically)
+    public int roomCount = 15;               // Number of rooms to generate
+    public GameObject player;                // The player object
+    public Transform roomsParent;            // Parent object for organizing rooms in the hierarchy
+
+    private bool[,] grid;                    // Keeps track of occupied cells in the grid
+    private List<Vector2Int> roomPositions;  // Stores the positions of rooms on the grid
+
+    void Start()
+    {
+        // Initialize grid and room list
+        grid = new bool[gridWidth, gridHeight];
+        roomPositions = new List<Vector2Int>();
+
+        // Generate the level
+        GenerateLevel();
+
+        // Place the player in the first room
+        Vector3 playerStartPosition = new Vector3(roomPositions[0].x * 10f, 0, roomPositions[0].y * 10f);
+        player.transform.position = playerStartPosition;
+    }
+
+    void GenerateLevel()
+    {
+        // Start by placing the first room at the center
+        Vector2Int startRoom = new Vector2Int(gridWidth / 2, gridHeight / 2);
+        PlaceRoom(startRoom);
+
+        // Randomly place rooms on the grid
+        for (int i = 0; i < roomCount - 1; i++)
+        {
+            // Get a random room from the placed rooms
+            Vector2Int currentRoom = roomPositions[Random.Range(0, roomPositions.Count)];
+
+            // Try to place a room in one of the four directions (up, down, left, right)
+            Vector2Int direction = GetRandomDirection();
+            Vector2Int newRoomPos = currentRoom + direction;
+
+            if (IsValidPosition(newRoomPos))
+            {
+                PlaceRoom(newRoomPos);
+                PlaceCorridor(currentRoom, newRoomPos);  // Connect rooms with a corridor
+            }
+        }
+
+        // Optionally: Set special rooms like boss rooms or treasure rooms
+        SetSpecialRooms();
+    }
+
+    void PlaceRoom(Vector2Int position)
+    {
+        // Mark the grid as occupied
+        grid[position.x, position.y] = true;
+
+        // Instantiate the room prefab
+        Vector3 roomPosition = new Vector3(position.x * 10f, 0, position.y * 10f);  // Adjust size as needed
+        Instantiate(roomPrefab, roomPosition, Quaternion.identity, roomsParent);
+
+        // Add the position to the list of room positions
+        roomPositions.Add(position);
+    }
+
+    void PlaceCorridor(Vector2Int from, Vector2Int to)
+    {
+        // Calculate the position and direction of the corridor
+        Vector3 corridorPosition = (new Vector3(from.x * 10f, 0, from.y * 10f) + new Vector3(to.x * 10f, 0, to.y * 10f)) / 2f;
+        Instantiate(corridorPrefab, corridorPosition, Quaternion.identity, roomsParent);
+    }
+
+    Vector2Int GetRandomDirection()
+    {
+        // Returns a random direction: up, down, left, or right
+        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        return directions[Random.Range(0, directions.Length)];
+    }
+
+    bool IsValidPosition(Vector2Int position)
+    {
+        // Check if the position is within the grid and not already occupied
+        if (position.x >= 0 && position.x < gridWidth && position.y >= 0 && position.y < gridHeight)
+        {
+            return !grid[position.x, position.y];
+        }
+        return false;
+    }
+
+    void SetSpecialRooms()
+    {
+        // For example, set the last room as a boss room
+        Vector2Int bossRoomPosition = roomPositions[roomPositions.Count - 1];
+        GameObject bossRoom = Instantiate(roomPrefab, new Vector3(bossRoomPosition.x * 10f, 0, bossRoomPosition.y * 10f), Quaternion.identity, roomsParent);
+        bossRoom.GetComponent<Renderer>().material.color = Color.red;  // Example: Change the room's color to indicate a boss room
+    }
+}
+Explanation:
+Room Placement: The script uses a 2D grid system to represent the level and randomly places rooms in adjacent grid cells.
+Corridor Placement: After placing a room, the script automatically connects it to the previous room using corridors, ensuring a connected level layout.
+Grid Validation: The algorithm checks if a room can be placed in a specific grid position by verifying whether the cell is empty and within bounds.
+Player Placement: The player is placed in the first generated room at the beginning of the game.
+Special Rooms: You can designate specific rooms (like the last one placed) as special rooms, such as boss rooms or treasure rooms, and customize them accordingly (e.g., change color or add special assets).
+Step 3: Customize the Generation Process
+Difficulty Scaling: You can increase the number of enemies or obstacles placed in rooms as the player progresses deeper into the level.
+Random Seeds: Add the option to input a random seed, allowing players to generate the same procedural level if they use the same seed.
+Themes: Modify the material, lighting, and props based on the current level theme (e.g., lava, jungle, space). You can add a system that picks the appropriate room prefabs, lighting, and objects for each theme.
+Biomes: For open-world generation, create different biomes (e.g., forests, mountains, deserts) and populate each biome with unique features and enemy types.
+Example Use Cases in Games:
+Roguelikes: In roguelikes such as The Binding of Isaac or Enter the Gungeon, where each dungeon run is different, PLG can generate new layouts with every playthrough.
+Dungeon Crawlers: Games like Diablo can use procedural generation to create endless randomized dungeons, caves, or catacombs, adding replayability.
+Platformers: In procedurally generated platformers like Spelunky, players navigate through randomly generated levels filled with traps, enemies, and treasures.
+Survival Games: Procedurally generated biomes in games like Minecraft or Don’t Starve offer exploration and resource collection in unique, dynamically created worlds.
+Conclusion:
+The Procedural Level Generation (PLG) algorithm, created by Benjamin Hunter Miller, offers a dynamic approach to generating random levels in Unity games. By leveraging a grid-based system and flexible prefab placement, it allows for the creation of varied, replayable levels with minimal designer input. This algorithm is ideal for roguelikes, dungeon crawlers, platformers, and survival games, where each playthrough should feel fresh and unpredictable.
