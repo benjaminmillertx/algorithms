@@ -38,7 +38,6 @@ if __name__ == '__main__':
 #     parallax.style.transform = 'translateY(' + scrollPosition * 0.5 + 'px)';
 # });
 # </script>
-AI-generated code. Review and use carefully. More info on FAQ.
 PHP
 PHP
 
@@ -67,7 +66,7 @@ PHP
     </script>
 </body>
 </html>
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Ruby (Sinatra)
 Ruby
 
@@ -105,7 +104,7 @@ __END__
     </script>
 </body>
 </html>
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Java (Spring Boot with Thymeleaf)
 Java
 
