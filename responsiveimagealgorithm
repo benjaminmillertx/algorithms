@@ -17,7 +17,7 @@ function optimizeImage(inputPath, outputPath, width, height) {
 
 // Example usage
 optimizeImage('input.jpg', 'output.jpg', 800, 600);
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Python
 Python
 
@@ -44,7 +44,7 @@ function optimizeImage($inputPath, $outputPath, $width, $height) {
 
 // Example usage
 optimizeImage('input.jpg', 'output.jpg', 800, 600);
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Ruby
 Ruby
 
@@ -58,7 +58,7 @@ end
 
 # Example usage
 optimize_image('input.jpg', 'output.jpg', 800, 600)
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Java
 Java
 
@@ -86,7 +86,7 @@ public class ImageOptimizer {
         optimizeImage("input.jpg", "output.jpg", 800, 600);
     }
 }
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Responsive Design with CSS
 CSS
 
@@ -112,5 +112,5 @@ img {
         width: 25%;
     }
 }
-AI-generated code. Review and use carefully. More info on FAQ.
+
 This implementation ensures that images are resized to fit within specified dimensions while maintaining their aspect ratio, and the CSS ensures that images are responsive to different screen sizes. Feel free to adapt and expand this code to suit your specific needs
