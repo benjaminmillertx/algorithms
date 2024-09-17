@@ -1,0 +1,190 @@
+Documentation for Adaptive Resource Allocation Manager (ARAM)
+Overview:
+The Adaptive Resource Allocation Manager (ARAM) is a kernel-level feature designed to optimize resource management in Linux by dynamically adjusting CPU, memory, and I/O resource allocation based on workload profiling. It uses a combination of real-time monitoring, machine learning, and system-level adjustments to enhance performance, particularly in environments like high-performance computing (HPC), cloud infrastructure, and embedded systems.
+
+Features:
+Workload Profiling Engine (WPE):
+
+Monitors real-time resource usage (CPU, memory, I/O).
+Profiles system processes and predicts future resource needs using machine learning algorithms.
+Dynamic Resource Scheduler (DRS):
+
+Dynamically reallocates system resources based on process priority and predicted workload.
+Ensures time-sensitive processes receive priority access to CPU, memory, and I/O.
+Energy Efficiency Mode (EEM):
+
+Adjusts resource allocation during idle times or low demand to save energy.
+Fault Tolerance & Recovery:
+
+Detects potential system failures related to resource bottlenecks and reallocates resources.
+Implements checkpointing for critical processes.
+User-Space Integration:
+
+Provides hooks for developers to interact with ARAM and define resource priorities.
+Command-line tools allow users to monitor and manually adjust resource allocations.
+Example Code: Kernel Module for ARAM
+Here’s a basic implementation outline of the ARAM feature as a loadable kernel module. This version focuses on dynamic CPU and memory reallocation based on real-time monitoring.
+
+1. Workload Profiling Engine (WPE)
+This component monitors CPU and memory usage of processes.
+
+c
+Copy code
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/sched.h>
+#include <linux/slab.h>
+#include <linux/init.h>
+#include <linux/timer.h>
+#include <linux/kthread.h>
+#include <linux/cpumask.h>
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Your Name");
+MODULE_DESCRIPTION("Workload Profiling Engine for ARAM");
+
+static struct task_struct *wpe_thread;
+
+// Function to monitor resource usage
+void monitor_usage(void) {
+    struct task_struct *task;
+    for_each_process(task) {
+        pr_info("Process: %s\t PID: %d\t CPU: %lu\t MEM: %lu\n", 
+                task->comm, task->pid, task->se.sum_exec_runtime, task->mm->total_vm);
+    }
+}
+
+// Thread function for WPE
+int wpe_fn(void *data) {
+    while (!kthread_should_stop()) {
+        monitor_usage();
+        ssleep(5);  // Monitor every 5 seconds
+    }
+    return 0;
+}
+
+// Module initialization
+static int __init wpe_init(void) {
+    pr_info("Initializing Workload Profiling Engine\n");
+    wpe_thread = kthread_run(wpe_fn, NULL, "wpe_thread");
+    return 0;
+}
+
+// Module cleanup
+static void __exit wpe_exit(void) {
+    pr_info("Exiting Workload Profiling Engine\n");
+    if (wpe_thread) {
+        kthread_stop(wpe_thread);
+    }
+}
+
+module_init(wpe_init);
+module_exit(wpe_exit);
+2. Dynamic Resource Scheduler (DRS)
+Once the profiling engine gathers data, we can implement the Dynamic Resource Scheduler to adjust CPU cores and memory for each process.
+
+c
+Copy code
+#include <linux/sched.h>
+#include <linux/cpumask.h>
+#include <linux/mm.h>
+
+void adjust_cpu_affinity(struct task_struct *task, int new_cpu) {
+    cpumask_t mask;
+    cpumask_clear(&mask);
+    cpumask_set_cpu(new_cpu, &mask);
+    set_cpus_allowed_ptr(task, &mask);
+    pr_info("Process %s (PID: %d) moved to CPU %d\n", task->comm, task->pid, new_cpu);
+}
+
+void adjust_memory_limit(struct task_struct *task, unsigned long new_limit) {
+    struct mm_struct *mm = task->mm;
+    mm->rlimit[RLIMIT_AS].rlim_max = new_limit;
+    pr_info("Process %s (PID: %d) memory limit set to %lu\n", task->comm, task->pid, new_limit);
+}
+3. Energy Efficiency Mode (EEM)
+The EEM feature conserves energy by scaling down the CPU frequency and memory allocation during idle times.
+
+c
+Copy code
+#include <linux/cpu.h>
+#include <linux/cpufreq.h>
+
+// Function to scale down CPU frequency
+void scale_down_cpu_freq(void) {
+    unsigned int cpu;
+    for_each_online_cpu(cpu) {
+        struct cpufreq_policy *policy = cpufreq_cpu_get(cpu);
+        if (policy) {
+            pr_info("Scaling down CPU %d frequency to %u\n", cpu, policy->min);
+            cpufreq_set_policy(policy, policy->min);
+            cpufreq_cpu_put(policy);
+        }
+    }
+}
+4. User-Space Integration
+User-space tools could be provided using sysfs to interact with ARAM for manual adjustments or monitoring.
+
+c
+Copy code
+#include <linux/sysfs.h>
+#include <linux/kobject.h>
+
+static struct kobject *aram_kobj;
+
+static ssize_t resource_adjust_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf) {
+    return sprintf(buf, "ARAM: Resource Adjustments Available\n");
+}
+
+static ssize_t resource_adjust_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count) {
+    pr_info("User space requested resource adjustment\n");
+    return count;
+}
+
+static struct kobj_attribute aram_attr = __ATTR(resource_adjust, 0664, resource_adjust_show, resource_adjust_store);
+
+static int __init aram_init(void) {
+    aram_kobj = kobject_create_and_add("aram", kernel_kobj);
+    if (!aram_kobj)
+        return -ENOMEM;
+
+    if (sysfs_create_file(aram_kobj, &aram_attr.attr)) {
+        pr_info("Failed to create ARAM sysfs file\n");
+        kobject_put(aram_kobj);
+        return -ENOMEM;
+    }
+
+    pr_info("ARAM initialized\n");
+    return 0;
+}
+
+static void __exit aram_exit(void) {
+    kobject_put(aram_kobj);
+    pr_info("ARAM exited\n");
+}
+
+module_init(aram_init);
+module_exit(aram_exit);
+Steps to Compile & Load the Module
+Compile the Module:
+
+bash
+Copy code
+make -C /lib/modules/$(uname -r)/build M=$PWD modules
+Load the Module:
+
+bash
+Copy code
+sudo insmod aram.ko
+Unload the Module:
+
+bash
+Copy code
+sudo rmmod aram
+View Kernel Log Messages:
+
+bash
+Copy code
+dmesg | grep ARAM
+
+This kernel module serves as a foundation for implementing the ARAM system, where real-time profiling, resource scheduling, and user-space interaction enable adaptive resource management. This approach allows for further extension by integrating machine learning models for predicting workload patterns, adding fault tolerance, and optimizing energy usage.
