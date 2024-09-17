@@ -78,7 +78,7 @@ while True:
 # Release the webcam and close all OpenCV windows
 cap.release()
 cv2.destroyAllWindows()
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Explanation of the Code
 Import Libraries: Import necessary libraries for webcam access, email, and SMS alerts.
 Initialize Webcam: Use cv2.VideoCapture(0) to access the default webcam.
