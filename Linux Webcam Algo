@@ -1,0 +1,93 @@
+Here’s a detailed guide and code for setting up a webcam-based security system on Linux. This example will use Python with OpenCV for motion detection and email alerts. Made by Benjamin Miller
+
+Step-by-Step Guide
+1. Install Required Libraries
+First, you need to install the necessary libraries. Open your terminal and run:
+
+pip install opencv-python smtplib twilio
+
+2. Write the Code
+Here’s a detailed Python script with comments explaining each part:
+
+Python
+
+import cv2
+import smtplib
+from email.mime.text import MIMEText
+from twilio.rest import Client
+
+# Initialize the webcam
+cap = cv2.VideoCapture(0)
+
+# Function to send an email alert
+def send_email_alert():
+    msg = MIMEText("Motion detected!")
+    msg['Subject'] = 'Security Alert'
+    msg['From'] = 'your_email@example.com'
+    msg['To'] = 'recipient_email@example.com'
+
+    # Connect to the SMTP server and send the email
+    with smtplib.SMTP('smtp.example.com', 587) as server:
+        server.starttls()
+        server.login('your_email@example.com', 'your_password')
+        server.send_message(msg)
+
+# Function to send an SMS alert
+def send_sms_alert():
+    client = Client('your_twilio_account_sid', 'your_twilio_auth_token')
+    message = client.messages.create(
+        body="Motion detected!",
+        from_='+1234567890',
+        to='+0987654321'
+    )
+
+# Main loop to capture frames from the webcam
+while True:
+    ret, frame = cap.read()  # Read a frame from the webcam
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # Convert the frame to grayscale
+    gray = cv2.GaussianBlur(gray, (21, 21), 0)  # Apply Gaussian blur to reduce noise
+
+    # Initialize the first frame for comparison
+    if 'first_frame' not in locals():
+        first_frame = gray
+        continue
+
+    # Compute the absolute difference between the current frame and the first frame
+    delta_frame = cv2.absdiff(first_frame, gray)
+    # Apply a threshold to get the binary image
+    thresh_frame = cv2.threshold(delta_frame, 30, 255, cv2.THRESH_BINARY)[1]
+    thresh_frame = cv2.dilate(thresh_frame, None, iterations=2)  # Dilate the threshold image to fill in holes
+
+    # Find contours in the threshold image
+    contours, _ = cv2.findContours(thresh_frame.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    for contour in contours:
+        if cv2.contourArea(contour) < 1000:  # Ignore small contours to reduce false positives
+            continue
+        (x, y, w, h) = cv2.boundingRect(contour)  # Get the bounding box for the contour
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)  # Draw a rectangle around the detected motion
+        send_email_alert()  # Send an email alert
+        send_sms_alert()  # Send an SMS alert
+
+    # Display the frame with the detected motion
+    cv2.imshow("Security Feed", frame)
+    key = cv2.waitKey(1)  # Wait for 1 ms before moving to the next frame
+    if key == ord('q'):  # Exit the loop if 'q' is pressed
+        break
+
+# Release the webcam and close all OpenCV windows
+cap.release()
+cv2.destroyAllWindows()
+AI-generated code. Review and use carefully. More info on FAQ.
+Explanation of the Code
+Import Libraries: Import necessary libraries for webcam access, email, and SMS alerts.
+Initialize Webcam: Use cv2.VideoCapture(0) to access the default webcam.
+Email Alert Function: Define a function to send an email alert using the smtplib library.
+SMS Alert Function: Define a function to send an SMS alert using the Twilio API.
+Main Loop: Continuously capture frames from the webcam, convert them to grayscale, and apply Gaussian blur.
+Motion Detection: Compare the current frame with the first frame to detect motion. If motion is detected, draw a rectangle around the moving object and send alerts.
+Display Feed: Show the webcam feed with detected motion in a window. Exit the loop if ‘q’ is pressed.
+Testing and Optimization
+Run the Script: Execute the script and test it in different environments.
+Adjust Sensitivity: Modify the threshold and contour area to fine-tune the sensitivity.
+Deploy: Set up the script to run as a background service on your Linux machine.
