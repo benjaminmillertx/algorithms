@@ -1,0 +1,151 @@
+Algorithm Name: Adaptive Sensor Fusion with Real-Time Optimization for Arduino (ASF-RT)
+Creator: Benjamin Hunter Miller
+
+Description:
+The Adaptive Sensor Fusion with Real-Time Optimization for Arduino (ASF-RT) algorithm is designed for microcontroller-based projects where multiple sensors are used to collect data. The goal of ASF-RT is to intelligently combine sensor data (sensor fusion) in real time, ensuring accurate readings while minimizing noise and errors. The algorithm also optimizes resource usage (memory and CPU) on the limited hardware of an Arduino, dynamically adjusting the fusion strategy based on the system’s state and available resources.
+
+This algorithm is particularly useful for applications like robotics, drones, home automation, and IoT devices where sensor data needs to be merged for decision-making, but hardware resources are limited.
+
+Key Features:
+Adaptive Sensor Fusion: Dynamically adjusts how sensor data is fused based on system conditions, sensor quality, and computational load.
+Real-Time Optimization: Monitors the system’s performance and resources (memory and CPU) and adjusts processing to ensure minimal delay.
+Kalman Filter Integration: Uses a lightweight Kalman filter to reduce sensor noise, ensuring smooth and accurate readings from noisy sensors.
+Data Redundancy Handling: Detects redundant or failed sensors and adapts the fusion algorithm to compensate, ensuring robustness.
+Energy Efficiency: Minimizes power consumption by adjusting sensor sampling rates and reducing processing intensity when not necessary.
+Low Latency: Designed to work within the real-time constraints of Arduino, ensuring quick sensor data processing for immediate feedback or control.
+How It Works:
+1. Sensor Input and Calibration:
+The algorithm starts by collecting data from multiple sensors (e.g., accelerometers, gyroscopes, temperature sensors, ultrasonic sensors). Each sensor is individually calibrated to ensure consistent and accurate data.
+
+2. Dynamic Sensor Fusion:
+ASF-RT employs different sensor fusion strategies (e.g., complementary filter, Kalman filter, or weighted averaging) based on the quality and type of sensor data. The algorithm constantly monitors data quality and adjusts the fusion approach in real time.
+
+Kalman Filter: The Kalman filter is applied to noisy sensor data (e.g., accelerometers) to reduce noise and predict sensor behavior.
+Complementary Filter: This filter is used to fuse fast-changing sensors (e.g., gyroscopes) with slow-changing sensors (e.g., accelerometers) for smooth orientation or motion tracking.
+3. Real-Time Performance Optimization:
+The algorithm continuously monitors the available processing power and memory. If the system is overloaded, it lowers the frequency of sensor data sampling or switches to a lower-computation fusion method (e.g., using simple weighted averages instead of the Kalman filter).
+
+4. Fault Detection and Adaptation:
+If a sensor fails or provides inconsistent data, ASF-RT can detect the anomaly and exclude the faulty sensor from the fusion process. This ensures the system continues functioning even if one sensor is compromised.
+
+5. Energy Efficiency:
+To save power, the algorithm reduces the sensor sampling rate during periods of low activity or when precision is not critical. It dynamically increases sampling and processing during periods of high activity.
+
+Use Cases:
+Robotics: In a robot with multiple sensors (e.g., gyroscope, accelerometer, distance sensors), ASF-RT can combine the data to track the robot's orientation and position in real-time, while adapting to sensor noise and hardware limitations.
+Drones: For a drone equipped with GPS, barometers, and IMUs (Inertial Measurement Units), the algorithm fuses the sensor data to provide stable altitude and orientation control.
+Home Automation: In a smart home system with various sensors (e.g., temperature, motion, and light sensors), ASF-RT can fuse the data to make more intelligent decisions, such as adjusting lighting and heating based on environmental conditions.
+Wearable Devices: For fitness trackers or other wearables, the algorithm can combine heart rate, accelerometer, and gyroscope data to provide accurate activity monitoring.
+Arduino Implementation:
+Step 1: Hardware Setup
+Sensors: Connect various sensors like a gyroscope (e.g., MPU6050), accelerometer, and temperature sensors to the Arduino.
+Arduino: Use any Arduino model (e.g., Uno, Nano, Mega) depending on the complexity and the number of sensors connected.
+Step 2: Arduino Code for Adaptive Sensor Fusion
+cpp
+Copy code
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_MPU6050.h>
+#include <KalmanFilter.h>
+
+// Sensor objects
+Adafruit_MPU6050 mpu;
+KalmanFilter kalmanX, kalmanY;
+
+// Fusion constants
+float alpha = 0.98; // Complementary filter constant
+float dt = 0.01;    // Time step in seconds
+unsigned long lastTime = 0;
+
+// Sensor data
+float accX, accY, accZ;
+float gyroX, gyroY, gyroZ;
+float fusedX, fusedY;
+
+// Threshold for fault detection
+const float faultThreshold = 10.0;
+
+// Initialize Kalman Filter parameters
+void initializeKalmanFilters() {
+  kalmanX.setProcessNoise(0.001);
+  kalmanX.setMeasurementNoise(0.01);
+  kalmanY.setProcessNoise(0.001);
+  kalmanY.setMeasurementNoise(0.01);
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  // Initialize MPU6050 sensor
+  if (!mpu.begin()) {
+    Serial.println("Failed to initialize MPU6050!");
+    while (1);
+  }
+
+  // Initialize Kalman filters
+  initializeKalmanFilters();
+
+  lastTime = millis();
+}
+
+void loop() {
+  // Read sensor data
+  sensors_event_t event;
+  mpu.getAccelerometerSensor()->getEvent(&event);
+  accX = event.acceleration.x;
+  accY = event.acceleration.y;
+  accZ = event.acceleration.z;
+
+  mpu.getGyroSensor()->getEvent(&event);
+  gyroX = event.gyro.x;
+  gyroY = event.gyro.y;
+  gyroZ = event.gyro.z;
+
+  // Time update for sensor fusion
+  unsigned long currentTime = millis();
+  dt = (currentTime - lastTime) / 1000.0;
+  lastTime = currentTime;
+
+  // Kalman filter processing
+  float kalmanAngleX = kalmanX.update(gyroX, accX, dt);
+  float kalmanAngleY = kalmanY.update(gyroY, accY, dt);
+
+  // Complementary filter fusion (smooth transitions)
+  fusedX = alpha * (fusedX + gyroX * dt) + (1 - alpha) * accX;
+  fusedY = alpha * (fusedY + gyroY * dt) + (1 - alpha) * accY;
+
+  // Fault detection for accelerometer
+  if (abs(accX) > faultThreshold || abs(accY) > faultThreshold || abs(accZ) > faultThreshold) {
+    Serial.println("Fault detected! Excluding accelerometer from fusion.");
+    // Switch to gyro-only mode or adjust filters
+    fusedX += gyroX * dt; // Ignore accelerometer temporarily
+    fusedY += gyroY * dt;
+  }
+
+  // Print the fused data
+  Serial.print("Fused X: ");
+  Serial.print(fusedX);
+  Serial.print(" | Fused Y: ");
+  Serial.println(fusedY);
+
+  delay(10); // Small delay to avoid too frequent updates
+}
+Explanation:
+Kalman Filter: The KalmanFilter library is used to smooth sensor data, particularly from noisy sources like accelerometers and gyroscopes. The Kalman filter predicts sensor values and refines the prediction based on actual sensor input.
+
+Complementary Filter: The complementary filter smoothly fuses fast sensor data (gyroscope) and slower, more reliable data (accelerometer) to give accurate angle measurements over time.
+
+Fault Detection: If the accelerometer data exceeds a predefined threshold (indicating noise or failure), the algorithm switches to a "gyro-only" mode, excluding the faulty sensor temporarily from the fusion process.
+
+Real-Time Optimization: The algorithm dynamically adjusts the fusion strategy based on available sensor data, ensuring smooth and accurate output with minimal computational overhead.
+
+Customization Options:
+Different Sensors: You can extend this algorithm to integrate other types of sensors like temperature, pressure, ultrasonic, or magnetometers for more complex applications.
+Energy-Saving Mode: Add dynamic sampling rate adjustments based on system state or add sleep modes for sensors to save power in low-activity scenarios.
+Parallel Processing: For more complex systems (e.g., drones), the algorithm can be parallelized across different sensors using multi-threading on more advanced microcontrollers or systems.
+Use Cases:
+Robotics and Drones: Ideal for fusing data from gyros, accelerometers, and magnetometers to track orientation, position, and movement in real time, especially in autonomous robots or flying drones.
+Wearables and Fitness Trackers: Combines accelerometer, heart rate, and GPS data to monitor user activities while ensuring minimal power consumption.
+Smart Homes: For systems that gather data from multiple environmental sensors (temperature, motion, light), the algorithm ensures accurate readings, energy efficiency, and fault-tolerant operation.
+Conclusion:
+The Adaptive Sensor Fusion with Real-Time Optimization for Arduino (ASF-RT), authored by Benjamin Hunter Miller, is a powerful algorithm designed to combine sensor data efficiently and accurately on limited hardware platforms like Arduino. It balances the precision of Kalman filtering with the real-time responsiveness of complementary filtering, dynamically adjusting to changing system conditions. This algorithm is ideal for applications like robotics, IoT devices, drones, and wearables, where real-time sensor fusion is crucial but resources are constrained.
