@@ -105,7 +105,7 @@ if behavior_hash.startswith('a'):  # Simulate anomaly detection
     encrypted_code = encrypt_code(original_code)
     print("Re-obfuscated Code:\n", obfuscated_code)
     print("Re-encrypted Code:\n", base64.urlsafe_b64encode(encrypted_code).decode())
-AI-generated code. Review and use carefully. More info on FAQ.
+
 Explanation:
 Key Generation: A key is generated for encryption using the Fernet module from the cryptography library.
 Obfuscation: The obfuscate_code function replaces the original code with random characters.
